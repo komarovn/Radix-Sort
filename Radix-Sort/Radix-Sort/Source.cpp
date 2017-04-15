@@ -2,8 +2,8 @@
  * 
  * Radix Sort
  * 
- * Developed by:	Grechukhin Nikita
- *					Komarov Nikolay
+ * Developed by:    Grechukhin Nikita
+ *                  Komarov Nikolay
  */
 
 #include <cstring>
