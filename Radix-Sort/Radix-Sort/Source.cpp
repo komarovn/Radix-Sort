@@ -66,10 +66,12 @@ void CountingSort(Type* inp, Type* out, int byteNum, int size)
 		counter[j] = temp;
 		temp += b;
 	}
+	unsigned char c;
 	for (int i = 0; i < size; i++)
 	{
-		out[counter[mas[sizeof(Type) * i + byteNum]]] = inp[i];
-		++counter[mas[sizeof(Type) * i + byteNum]];
+		c = mas[sizeof(Type) * i + byteNum];
+		out[counter[c]] = inp[i];
+		++counter[c];
 	}
 }
 
@@ -94,7 +96,7 @@ void LSDSort(Type* inp, int size, bool is64)
 
 int main(int argc, char* argv[])
 {
-	srand(time(NULL));
+	srand(time(nullptr));
 	rand();
 	bool debugMode = false;
 	int size = 100000000; // 100 M
