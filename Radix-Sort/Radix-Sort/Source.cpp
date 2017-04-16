@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <algorithm>
 
 template<class Type>
 void createTestData(Type* &data, const int &size)
@@ -42,11 +43,7 @@ void CountingSort(Type* inp, Type* out, int byteNum, int size)
 	unsigned char* mas = reinterpret_cast<unsigned char *>(inp);
 	int counter[256];
 	int temp;
-	for (int i = 0; i < 256; i++)
-	{
-		counter[i] = 0;
-	}
-	//memset(counter, 0, sizeof(Type) * 256);
+	memset(counter, 0, sizeof counter);
 	for (int i = 0; i < size; i++)
 	{
 		++counter[mas[sizeof(Type) * i + byteNum]];
@@ -94,6 +91,12 @@ void LSDSort(Type* inp, int size, bool is64)
 	delete[] out;
 }
 
+template<class Type>
+int compare(const void* a, const void* b)
+{
+  return (*(Type *) a - *(Type *) b);
+}
+
 int main(int argc, char* argv[])
 {
 	srand(time(nullptr));
@@ -101,6 +104,8 @@ int main(int argc, char* argv[])
 	bool debugMode = false;
 	int size = 100000000; // 100 M
 	int startTime, endTime, time32, time64;
+
+	/* ------------------------ Radix Sort -------------------------- */
 
 	__int32* testArray32 = new __int32[size];
 	createTestData(testArray32, size);
@@ -124,9 +129,39 @@ int main(int argc, char* argv[])
 	{
 		printResult(testArray64, size);
 	}
-
-	printTime(time32, time64);
-	
 	delete [] testArray64;
+
+	std::cout << "Radix Sort:\n";
+	printTime(time32, time64);
+
+	/* --------------------------- STL ------------------------------ */
+	
+	__int32* testArray32Stl = new __int32[size];
+	createTestData(testArray32Stl, size);
+	startTime = clock();
+	std::qsort(testArray32Stl, size, sizeof(__int32), compare<__int32>);
+	endTime = clock();
+	time32 = endTime - startTime;
+	if (debugMode)
+	{
+		printResult(testArray32Stl, size);
+	}
+	delete [] testArray32Stl;
+
+	__int64* testArray64Stl = new __int64[size];
+	createTestData(testArray64Stl, size);
+	startTime = clock();
+	std::qsort(testArray64Stl, size, sizeof(__int64), compare<__int64>);
+	endTime = clock();
+	time64 = endTime - startTime;
+	if (debugMode)
+	{
+		printResult(testArray64Stl, size);
+	}
+	
+	std::cout << "\nStandart Quick Sort:\n";
+	printTime(time32, time64);
+
+	delete [] testArray64Stl;
 	return 0;
 }
