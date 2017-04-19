@@ -15,6 +15,8 @@
 template<class Type>
 void createTestData(Type* &data, const int &size)
 {
+	srand(time(nullptr));
+	rand();
 	for (int i = 0; i < size; i++)
 	{
 		data[i] = rand();
@@ -99,8 +101,6 @@ int compare(const void* a, const void* b)
 
 int main(int argc, char* argv[])
 {
-	srand(time(nullptr));
-	rand();
 	bool debugMode = false;
 	int size = 100000000; // 100 M
 	int startTime, endTime, time32, time64;
