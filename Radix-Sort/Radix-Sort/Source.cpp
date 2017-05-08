@@ -17,7 +17,7 @@ unsigned __int64 byteMask64_second = 0xffff00000000;
 unsigned __int64 byteMask64_third = 0xffff0000;
 unsigned __int64 byteMask64_fourth = 0xffff;
 
-unsigned __int64 byteMasks[4] = {0xffff000000000000, 0xffff00000000, 0xffff0000, 0xffff};
+unsigned __int64 byteMasks[4] = {0xffff, 0xffff0000, 0xffff00000000, 0xffff000000000000};
 
 template<class Type>
 void createTestData(Type* &data, const int &size)
@@ -139,13 +139,13 @@ template<class Type>
 void LSDSort2(Type* inp, int size, bool is64)
 {
 	Type* out = new Type[size];
-	CountingSort(inp, out, 0, size);
-	CountingSort(out, inp, 1, size);
+	CountingSort2(inp, out, 0, size);
+	CountingSort2(out, inp, 1, size);
 
 	if (is64)
 	{
-		CountingSort(inp, out, 2, size);
-		CountingSort(out, inp, 3, size);
+		CountingSort2(inp, out, 2, size);
+		CountingSort2(out, inp, 3, size);
 	}
 	delete[] out;
 }
@@ -158,12 +158,12 @@ int compare(const void* a, const void* b)
 
 int main(int argc, char* argv[])
 {
-	bool debugMode = false;
-	int size = 100000000; // 100 M
+	bool debugMode = true;
+	int size = 20; // 100000000; // 100 M
 	int startTime, endTime, time32, time64, time32_2, time64_2;
 
 	/* ------------------------ Radix Sort -------------------------- */
-
+	
 	__int32* testArray32 = new __int32[size];
 	createTestData(testArray32, size);
 	startTime = clock();
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
 
 	std::cout << "Radix Sort:\n";
 	printTime(time32, time64);
-
+	
 	/* ------------------------ Radix Sort 2 ------------------------- */
 
 	__int32* testArray32_2 = new __int32[size];
@@ -249,5 +249,6 @@ int main(int argc, char* argv[])
 	printTime(time32, time64);
 
 	delete [] testArray64Stl;
+	
 	return 0;
 }
