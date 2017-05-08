@@ -12,6 +12,13 @@
 #include <iostream>
 #include <algorithm>
 
+unsigned __int64 byteMask64_first = 0xffff000000000000;
+unsigned __int64 byteMask64_second = 0xffff00000000;
+unsigned __int64 byteMask64_third = 0xffff0000;
+unsigned __int64 byteMask64_fourth = 0xffff;
+
+unsigned __int64 byteMasks[4] = {0xffff000000000000, 0xffff00000000, 0xffff0000, 0xffff};
+
 template<class Type>
 void createTestData(Type* &data, const int &size)
 {
@@ -42,13 +49,12 @@ void printTime(int &time32, int &time64)
 template<class Type>
 void CountingSort(Type* inp, Type* out, int byteNum, int size)
 {
-	unsigned char* mas = reinterpret_cast<unsigned char *>(inp);
+	unsigned char* arrayOfBytes = reinterpret_cast<unsigned char *>(inp);
 	int counter[256];
-	int temp;
 	memset(counter, 0, sizeof counter);
 	for (int i = 0; i < size; i++)
 	{
-		++counter[mas[sizeof(Type) * i + byteNum]];
+		++counter[arrayOfBytes[sizeof(Type) * i + byteNum]];
 	}
 	int j = 0;
 	for (; j < 256; j++)
@@ -56,19 +62,19 @@ void CountingSort(Type* inp, Type* out, int byteNum, int size)
 		if (counter[j] != 0)
 			break;
 	}
-	temp = counter[j];
+	int currentValueOfCounter = counter[j];
 	counter[j] = 0;
 	j++;
 	for (; j < 256; j++)
 	{
 		int b = counter[j];
-		counter[j] = temp;
-		temp += b;
+		counter[j] = currentValueOfCounter;
+		currentValueOfCounter += b;
 	}
 	unsigned char c;
 	for (int i = 0; i < size; i++)
 	{
-		c = mas[sizeof(Type) * i + byteNum];
+		c = arrayOfBytes[sizeof(Type) * i + byteNum];
 		out[counter[c]] = inp[i];
 		++counter[c];
 	}
@@ -94,6 +100,57 @@ void LSDSort(Type* inp, int size, bool is64)
 }
 
 template<class Type>
+void CountingSort2(Type* inp, Type* out, int maskNumber, int size)
+{
+	int counter[65535];
+	memset(counter, 0, sizeof counter);
+	for (int i = 0; i < size; i++)
+	{
+		++counter[inp[i] & byteMasks[maskNumber]];
+	}
+
+	int j = 0;
+	for (; j < 256; j++)
+	{
+		if (counter[j] != 0)
+			break;
+	}
+
+	int currentValueOfCounter = counter[j];
+	counter[j] = 0;
+	j++;
+	for (; j < 256; j++)
+	{
+		int b = counter[j];
+		counter[j] = currentValueOfCounter;
+		currentValueOfCounter += b;
+	}
+
+	unsigned char c;
+	for (int i = 0; i < size; i++)
+	{
+		c = inp[i] & byteMasks[maskNumber];
+		out[counter[c]] = inp[i];
+		++counter[c];
+	}
+}
+
+template<class Type>
+void LSDSort2(Type* inp, int size, bool is64)
+{
+	Type* out = new Type[size];
+	CountingSort(inp, out, 0, size);
+	CountingSort(out, inp, 1, size);
+
+	if (is64)
+	{
+		CountingSort(inp, out, 2, size);
+		CountingSort(out, inp, 3, size);
+	}
+	delete[] out;
+}
+
+template<class Type>
 int compare(const void* a, const void* b)
 {
   return (*(Type *) a - *(Type *) b);
@@ -103,7 +160,7 @@ int main(int argc, char* argv[])
 {
 	bool debugMode = false;
 	int size = 100000000; // 100 M
-	int startTime, endTime, time32, time64;
+	int startTime, endTime, time32, time64, time32_2, time64_2;
 
 	/* ------------------------ Radix Sort -------------------------- */
 
@@ -133,6 +190,35 @@ int main(int argc, char* argv[])
 
 	std::cout << "Radix Sort:\n";
 	printTime(time32, time64);
+
+	/* ------------------------ Radix Sort 2 ------------------------- */
+
+	__int32* testArray32_2 = new __int32[size];
+	createTestData(testArray32_2, size);
+	startTime = clock();
+	LSDSort2(testArray32_2, size, false);
+	endTime = clock();
+	time32_2 = endTime - startTime;
+	if (debugMode)
+	{
+		printResult(testArray32_2, size);
+	}
+	delete [] testArray32_2;
+
+	__int64* testArray64_2 = new __int64[size];
+	createTestData(testArray64_2, size);
+	startTime = clock();
+	LSDSort2(testArray64_2, size, true);
+	endTime = clock();
+	time64_2 = endTime - startTime;
+	if (debugMode)
+	{
+		printResult(testArray64_2, size);
+	}
+	delete [] testArray64_2;
+
+	std::cout << "Radix Sort 2:\n";
+	printTime(time32_2, time64_2);
 
 	/* --------------------------- STL ------------------------------ */
 	
