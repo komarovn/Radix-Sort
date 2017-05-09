@@ -11,13 +11,7 @@
 #include <ctime>
 #include <iostream>
 #include <algorithm>
-
-unsigned __int64 byteMask64_first = 0xffff000000000000;
-unsigned __int64 byteMask64_second = 0xffff00000000;
-unsigned __int64 byteMask64_third = 0xffff0000;
-unsigned __int64 byteMask64_fourth = 0xffff;
-
-unsigned __int64 byteMasks[4] = {0xffff, 0xffff0000, 0xffff00000000, 0xffff000000000000};
+#include <cstdint>
 
 template<class Type>
 void createTestData(Type* &data, const int &size)
@@ -26,7 +20,7 @@ void createTestData(Type* &data, const int &size)
 	rand();
 	for (int i = 0; i < size; i++)
 	{
-		data[i] = rand();
+		data[i] = rand() * rand() % INT64_MAX;
 	}
 }
 
@@ -102,11 +96,49 @@ void LSDSort(Type* inp, int size, bool is64)
 template<class Type>
 void CountingSort2(Type* inp, Type* out, int maskNumber, int size)
 {
-	int counter[65535];
+	int counter[65536];
 	memset(counter, 0, sizeof counter);
+	unsigned __int64 offset = maskNumber << 4;
 	for (int i = 0; i < size; i++)
 	{
-		++counter[inp[i] & byteMasks[maskNumber]];
+		++counter[(inp[i] & (65535 << offset)) >> offset];
+	}
+
+	int j = 0;
+	for (; j < 65536; j++)
+	{
+		if (counter[j] != 0)
+			break;
+	}
+
+	int currentValueOfCounter = counter[j];
+	counter[j] = 0;
+	j++;
+	for (; j < 65536; j++)
+	{
+		int b = counter[j];
+		counter[j] = currentValueOfCounter;
+		currentValueOfCounter += b;
+	}
+
+	unsigned __int64 c;
+	for (int i = 0; i < size; i++)
+	{
+		c = (inp[i] & (65535 << offset)) >> offset;
+		out[counter[c]] = inp[i];
+		++counter[c];
+	}
+}
+
+template<class Type>
+void CountingSort3(Type* inp, Type* out, int maskNumber, int size)
+{
+	int counter[256];
+	memset(counter, 0, sizeof counter);
+	unsigned __int64 offset = maskNumber << 3;
+	for (int i = 0; i < size; i++)
+	{
+		++counter[(inp[i] & (255 << offset)) >> offset];
 	}
 
 	int j = 0;
@@ -129,7 +161,7 @@ void CountingSort2(Type* inp, Type* out, int maskNumber, int size)
 	unsigned char c;
 	for (int i = 0; i < size; i++)
 	{
-		c = inp[i] & byteMasks[maskNumber];
+		c = (inp[i] & (255 << offset)) >> offset;
 		out[counter[c]] = inp[i];
 		++counter[c];
 	}
@@ -151,6 +183,25 @@ void LSDSort2(Type* inp, int size, bool is64)
 }
 
 template<class Type>
+void LSDSort3(Type* inp, int size, bool is64)
+{
+	Type* out = new Type[size];
+	CountingSort3(inp, out, 0, size);
+	CountingSort3(out, inp, 1, size);
+	CountingSort3(inp, out, 2, size);
+	CountingSort3(out, inp, 3, size);
+
+	if (is64)
+	{
+		CountingSort3(inp, out, 4, size);
+		CountingSort3(out, inp, 5, size);
+		CountingSort3(inp, out, 6, size);
+		CountingSort3(out, inp, 7, size);
+	}
+	delete[] out;
+}
+
+template<class Type>
 int compare(const void* a, const void* b)
 {
   return (*(Type *) a - *(Type *) b);
@@ -158,8 +209,8 @@ int compare(const void* a, const void* b)
 
 int main(int argc, char* argv[])
 {
-	bool debugMode = true;
-	int size = 20; // 100000000; // 100 M
+	bool debugMode = false;
+	const int size = 10000000; // 100 M
 	int startTime, endTime, time32, time64, time32_2, time64_2;
 
 	/* ------------------------ Radix Sort -------------------------- */
